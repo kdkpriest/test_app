@@ -1,0 +1,133 @@
+
+name: Project 500 CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  PROJECT_NAME: project_500
+  ENVIRONMENT: development
+
+jobs:
+  job_1_checkout:
+    name: "Job 1 - Checkout Code"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download repository code
+        uses: actions/checkout@v4
+
+      - name: Display project details
+        run: |
+          echo "Project: $PROJECT_NAME"
+          echo "Environment: $ENVIRONMENT"
+
+  job_2_environment:
+    name: "Job 2 - Check Environment"
+    runs-on: ubuntu-latest
+    needs: job_1_checkout
+    steps:
+      - name: Show system information
+        run: |
+          echo "Checking the runner environment"
+          uname -a
+          echo "Environment check completed"
+
+  job_3_dependencies:
+    name: "Job 3 - Install Dependencies"
+    runs-on: ubuntu-latest
+    needs: job_2_environment
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install basic tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl git
+          curl --version
+          git --version
+
+  job_4_yaml_validation:
+    name: "Job 4 - Validate YAML"
+    runs-on: ubuntu-latest
+    needs: job_3_dependencies
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install YAML validator
+        run: python -m pip install yamllint
+
+      - name: Validate pipeline syntax
+        run: yamllint -d relaxed .github/workflows/ci-cd-pipeline.yml
+
+  job_5_testing:
+    name: "Job 5 - Run Tests"
+    runs-on: ubuntu-latest
+    needs: job_4_yaml_validation
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run sample tests
+        run: |
+          echo "Running project tests"
+          test -d .github
+          test -f .github/workflows/ci-cd-pipeline.yml
+          echo "All sample tests passed"
+
+  job_6_security:
+    name: "Job 6 - Basic Security Check"
+    runs-on: ubuntu-latest
+    needs: job_5_testing
+    steps:
+      - name: Check repository files
+        uses: actions/checkout@v4
+
+      - name: Check for private key files
+        run: |
+          if find . -type f \
+            \( -name "*.pem" -o -name "id_rsa" \) \
+            -not -path "./.git/*" | grep -q .; then
+            echo "Warning: Possible private key file found"
+            exit 1
+          else
+            echo "No matching private key files found"
+          fi
+
+  job_7_build:
+    name: "Job 7 - Build Project"
+    runs-on: ubuntu-latest
+    needs: job_6_security
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create build artifact
+        run: |
+          mkdir -p build
+          echo "Project: $PROJECT_NAME" > build/info.txt
+          echo "Build completed successfully"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: project-500-build
+          path: build/info.txt
+
+  job_8_deployment:
+    name: "Job 8 - Deployment Simulation"
+    runs-on: ubuntu-latest
+    needs: job_7_build
+    steps:
+      - name: Simulate deployment
+        run: |
+          echo "Project: $PROJECT_NAME"
+          echo "Target: $ENVIRONMENT"
+          echo "Deployment simulation completed"
