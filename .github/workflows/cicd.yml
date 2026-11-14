@@ -44,4 +44,3 @@ jobs:
           echo "================================"
           echo "PROJECT 500 PIPELINE SUCCESSFUL"
           echo "================================"
-```
